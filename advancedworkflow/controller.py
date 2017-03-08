@@ -499,8 +499,8 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
         actions = self.get_configurable_workflow().actions
         label = actions[action]['name']
         # check if the assigned milestone has been completed
-        milestone = Milestone(self.env,ticket['milestone'])
-        if milestone.is_completed:
+        milestone = self._fetch_milestone(ticket)
+        if milestone and milestone.is_completed:
             hint = 'The milestone will be reset'
         else:
             hint = ''
@@ -509,7 +509,15 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
 
     def get_ticket_changes(self, req, ticket, action):
         """Returns the change of milestone, if needed."""
-        milestone = Milestone(self.env,ticket['milestone'])
-        if milestone.is_completed:
+        milestone = self._fetch_milestone(ticket)
+        if milestone and milestone.is_completed:
             return {'milestone': ''}
         return {}
+
+    def _fetch_milestone(self, ticket):
+        if ticket['milestone']:
+            try:
+                return Milestone(self.env, ticket['milestone'])
+            except ResourceNotFound, e:
+                self.log.warning("In %s, %s", self._op_name, to_unicode(e))
+        return None

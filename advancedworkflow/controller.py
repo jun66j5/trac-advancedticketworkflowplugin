@@ -16,6 +16,7 @@ from trac.ticket.model import Milestone
 from trac.ticket.notification import TicketNotifyEmail
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
+from trac.util.text import to_unicode
 from trac.web.chrome import add_warning
 
 
@@ -126,9 +127,12 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
 
     def _new_owner(self, ticket):
         """Determines the new owner"""
-        component = model.Component(self.env, name=ticket['component'])
-        self.env.log.debug("component %s, owner %s" % (component, component.owner))
-        return component.owner
+        try:
+            component = model.Component(self.env, name=ticket['component'])
+            return component.owner
+        except ResourceNotFound, e:
+            self.log.warning("In %s, %s", self._op_name, to_unicode(e))
+            return None
 
 
 class TicketWorkflowOpOwnerField(TicketWorkflowOpBase):
